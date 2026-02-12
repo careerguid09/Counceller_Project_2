@@ -341,7 +341,7 @@ export default function App() {
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.7 }}
+                transition={{ duration: 0.3 }}
               >
                 <h1 className="text-4xl md:text-5xl lg:text-5xl font-bold mb-6 leading-tight">
                   <span className={darkMode ? "text-white" : "text-gray-900"}>
@@ -638,7 +638,7 @@ export default function App() {
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ delay: 0.7, type: "spring" }}
+                      transition={{ delay: 0.3, type: "spring" }}
                       className={`absolute bottom-6 right-6 lg:bottom-10 lg:right-10 w-32 lg:w-40 p-4 rounded-2xl backdrop-blur-sm ${
                         darkMode
                           ? "bg-gray-800/80 border-gray-700"

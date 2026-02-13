@@ -31,6 +31,8 @@ import {
   Users,
 } from "lucide-react";
 import countries from "world-countries";
+import { createStudent } from "../Redux-toolkit/features/studentsThunks";
+import { useDispatch } from "react-redux";
 
 
 const countriesData = countries
@@ -226,6 +228,7 @@ const Toast = ({ message, type = "success", onClose, progress = 100 }) => {
 };
 
 const Contact = () => {
+  const dispatch = useDispatch();
   const domainData = {
     MEDICAL: ["MBBS", "BAMS", "BHMS", "BNYS"],
     PHARMACY: ["B.Pharma", "D.Pharma", "M.Pharma", "Pharm D"],
@@ -239,7 +242,7 @@ const Contact = () => {
     "High School (10th)",
     "Intermediate (12th)",
     "Diploma Holder",
-    "Undergraduate",
+    "Graduate",
     "Postgraduate",
     "PhD / Doctorate",
   ];
@@ -337,7 +340,71 @@ const Contact = () => {
     });
   };
 
-  const handleSubmit = async (e) => {
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   if (formData.phone.length < 8) {
+  //     toast.error("Please enter a valid phone number (minimum 8 digits).");
+  //     return;
+  //   }
+
+  //   if (!formData.eduLevel || !formData.domain || !formData.course) {
+  //     toast.warning("Please fill all required academic fields.");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+  //   const loadingToastId = toast.loading("Submitting your form...");
+
+  //   try {
+  //     const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/clients`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({
+  //         ...formData,
+  //         phone: `${formData.countryCode} ${formData.phone}`,
+  //       }),
+  //     });
+
+  //     toast.dismiss(loadingToastId);
+
+  //     if (!response.ok) {
+  //       const data = await response.json();
+  //       throw new Error(data.message || "Something went wrong");
+  //     }
+
+  //     setIsSubmitted(true);
+  //     setFormData({
+  //       fullName: "",
+  //       email: "",
+  //       countryCode: "+91",
+  //       phone: "",
+  //       dob: "",
+  //       age: "",
+  //       country: "",
+  //       state: "",
+  //       city: "",
+  //       eduLevel: "",
+  //       domain: "",
+  //       course: "",
+  //       message: "",
+  //     });
+
+  //     toast.success("Form submitted successfully! Our team will contact you soon.");
+
+  //     setTimeout(() => setIsSubmitted(false), 5000);
+  //   } catch (error) {
+  //     console.error("Form submit error:", error);
+  //     toast.error(
+  //       error.message || "Submission failed. Please try again later.",
+  //     );
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+
+const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.phone.length < 8) {
@@ -353,24 +420,20 @@ const Contact = () => {
     setIsLoading(true);
     const loadingToastId = toast.loading("Submitting your form...");
 
+    // Prepare payload exactly as before
+    const payload = {
+      ...formData,
+      phone: `${formData.countryCode} ${formData.phone}`,
+    };
+
     try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/clients`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          phone: `${formData.countryCode} ${formData.phone}`,
-        }),
-      });
+      // 4. Use unwrap() to handle the promise result locally for the toast
+      await dispatch(createStudent(payload)).unwrap();
 
       toast.dismiss(loadingToastId);
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Something went wrong");
-      }
-
       setIsSubmitted(true);
+      
+      // Reset form
       setFormData({
         fullName: "",
         email: "",
@@ -388,17 +451,17 @@ const Contact = () => {
       });
 
       toast.success("Form submitted successfully! Our team will contact you soon.");
-
       setTimeout(() => setIsSubmitted(false), 5000);
     } catch (error) {
+      toast.dismiss(loadingToastId);
       console.error("Form submit error:", error);
-      toast.error(
-        error.message || "Submission failed. Please try again later.",
-      );
+      // 'error' here will be the value returned by rejectWithValue in your thunk
+      toast.error(error || "Submission failed. Please try again later.");
     } finally {
       setIsLoading(false);
     }
   };
+
 
   const openWhatsApp = () => {
     const message = `Hello SS Admission Wala, I'm interested in career counseling.`;

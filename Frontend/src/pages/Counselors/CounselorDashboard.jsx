@@ -111,7 +111,7 @@ const CounselorDashboard = () => {
       id: 7,
       name: "GRADUATION",
       icon: BookOpen,
-      description: "Undergraduate arts and science degrees",
+      description: "Graduate arts and science degrees",
       color: "text-teal-600",
       bgColor: "bg-teal-50",
     },

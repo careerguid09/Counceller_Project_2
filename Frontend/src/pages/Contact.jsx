@@ -239,7 +239,7 @@ const Contact = () => {
     "High School (10th)",
     "Intermediate (12th)",
     "Diploma Holder",
-    "Undergraduate",
+    "Graduate",
     "Postgraduate",
     "PhD / Doctorate",
   ];

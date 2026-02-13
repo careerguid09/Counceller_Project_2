@@ -101,16 +101,32 @@ export const getDashboardStats = createAsyncThunk(
   }
 );
 
+// export const getDomainStats = createAsyncThunk(
+//   "students/domainStats",
+//   async (_, { rejectWithValue }) => {
+//     try {
+//       return await authFetch("/clients/stats/domain");
+//     } catch (err) {
+//       return rejectWithValue(err.message);
+//     }
+//   }
+// );
+
 export const getDomainStats = createAsyncThunk(
   "students/domainStats",
-  async (_, { rejectWithValue }) => {
+  async (_, { dispatch, rejectWithValue }) => {
     try {
-      return await authFetch("/clients/stats/domain");
+      const stats = await authFetch("/clients/stats/domain");
+      // Background fetch all students immediately after getting stats
+      // This ensures the 'students' array is filled without blocking the dashboard render
+      dispatch(getAllStudents()); 
+      return stats;
     } catch (err) {
       return rejectWithValue(err.message);
     }
   }
 );
+
 
 export const getCourseStats = createAsyncThunk(
   "students/courseStats",

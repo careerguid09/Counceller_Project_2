@@ -155,9 +155,14 @@ const CounselorDashboard = () => {
   ];
 
   useEffect(() => {
-    dispatch(getDomainStats());
-    const saved = localStorage.getItem("counselorProfile");
-    if (saved) setCounselorProfile(JSON.parse(saved));
+    // FIX: Only fetch if we don't have data, OR fetch silently in background
+    if (stats.domain.length === 0) {
+      dispatch(getDomainStats());
+    } else {
+      // Data exists! Optionally refresh in background without showing "Loading..."
+      // This is called "Stale-While-Revalidate"
+      dispatch(getDomainStats()); 
+    }
   }, [dispatch]);
 
   // --- UTILS ---
@@ -174,20 +179,34 @@ const CounselorDashboard = () => {
   };
 
   // --- HANDLERS ---
+  // const handleDomainClick = (domain) => {
+  //   if (domain.hasNew) dispatch(markDomainViewed(domain.domain));
+  //   const info = counselorDomains.find((d) => d.name === domain.domain) || counselorDomains[0];
+  //   setSelectedDomain({ ...info, stats: domain });
+  //   dispatch(getCourseStats(domain.domain));
+  //   window.scrollTo(0, 0);
+  //   setCurrentView("domainCourses");
+  // };
   const handleDomainClick = (domain) => {
     if (domain.hasNew) dispatch(markDomainViewed(domain.domain));
     const info = counselorDomains.find((d) => d.name === domain.domain) || counselorDomains[0];
     setSelectedDomain({ ...info, stats: domain });
-    dispatch(getCourseStats(domain.domain));
-    window.scrollTo(0, 0);
+    
+    // Still call this to keep backend updated, but UI won't show a loader
+    dispatch(getCourseStats(domain.domain)); 
+    
     setCurrentView("domainCourses");
   };
 
-  const handleCourseClick = (course) => {
+ const handleCourseClick = (course) => {
     if (course.hasNew) dispatch(markCourseViewed(course.course));
     setSelectedCourse(course);
+    
+    // INSTANT: We don't wait for dispatch(getStudentsByCourse).
+    // The students are already in the 'students' state from our Mega-Fetch.
+    // We only dispatch to sync if needed, but the UI is ready.
     dispatch(getStudentsByCourse(course.course));
-    window.scrollTo(0, 0);
+    
     setCurrentView("clients");
   };
 
@@ -219,13 +238,20 @@ const CounselorDashboard = () => {
       });
   };
 
+  // const handleStatusFilter = (status) => {
+  //   setSelectedDomain({ name: status.toUpperCase(), icon: TrendingUp });
+  //   dispatch(dynamicFilterStudents({ filterField: 'status', filterValue: status }));
+  //   window.scrollTo(0, 0);
+  //   setCurrentView("clients");
+  // };
+
+
   const handleStatusFilter = (status) => {
     setSelectedDomain({ name: status.toUpperCase(), icon: TrendingUp });
     dispatch(dynamicFilterStudents({ filterField: 'status', filterValue: status }));
-    window.scrollTo(0, 0);
     setCurrentView("clients");
+    window.scrollTo(0, 0);
   };
-
   const exportToExcel = async () => {
     try {
       setExporting(true);

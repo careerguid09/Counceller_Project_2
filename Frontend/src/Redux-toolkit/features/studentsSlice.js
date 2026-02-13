@@ -1,10 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { 
-  getAllStudents, getStudentsByDomain, getStudentsByCourse, 
-  dynamicFilterStudents, createStudent, deleteStudent, 
-  updateStudentStatus, getDashboardStats, getDomainStats, 
-  getCourseStats, getRecentNewStudents, getUnviewedCounts, 
-  markStudentViewed, markDomainViewed, markCourseViewed 
+import {
+  getAllStudents, getStudentsByDomain, getStudentsByCourse,
+  dynamicFilterStudents, createStudent, deleteStudent,
+  updateStudentStatus, getDashboardStats, getDomainStats,
+  getCourseStats, getRecentNewStudents, getUnviewedCounts,
+  markStudentViewed, markDomainViewed, markCourseViewed
 } from "./studentsThunks";
 
 const initialState = {
@@ -101,8 +101,15 @@ const studentsSlice = createSlice({
       // ================= GLOBAL MATCHERS =================
       .addMatcher(
         (action) => action.type.endsWith("/pending"),
-        (state) => {
-          state.loading = true;
+        (state, action) => {
+          // FIX: Only show loading if we have NO data. 
+          // If we already have students, let them stay on screen while we fetch new ones.
+          if (
+            (action.type === "students/domainStats/pending" || action.type === "students/getAll/pending") &&
+            state.students.length === 0
+          ) {
+            state.loading = true;
+          }
           state.error = null;
         }
       )

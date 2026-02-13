@@ -202,9 +202,7 @@ const CounselorDashboard = () => {
     if (course.hasNew) dispatch(markCourseViewed(course.course));
     setSelectedCourse(course);
     
-    // INSTANT: We don't wait for dispatch(getStudentsByCourse).
-    // The students are already in the 'students' state from our Mega-Fetch.
-    // We only dispatch to sync if needed, but the UI is ready.
+    
     dispatch(getStudentsByCourse(course.course));
     
     setCurrentView("clients");

@@ -3,6 +3,49 @@ const Counselor = require("../models/Counselor");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
+exports.registerCounselor = async (req, res) => {
+  try {
+    const { email, password, name } = req.body;
+
+    if (!email || !password ) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
+
+    const existingCounselor = await Counselor.findOne({ email });
+
+    if (existingCounselor) {
+      return res.status(409).json({ message: "Counselor already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const counselor = new Counselor({
+      email,
+      password: hashedPassword,
+    });
+
+    await counselor.save();
+
+    const token = jwt.sign(
+      { id: counselor._id, role: "counselor" },
+      process.env.JWT_SECRET,
+    );
+
+    res.status(201).json({
+      message: "Registration successful",
+      token,
+      counselor: {
+        id: counselor._id,
+        email: counselor.email,
+      }
+    });
+
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 exports.loginCounselor = async (req, res) => {
   try {
     const { email, password } = req.body;

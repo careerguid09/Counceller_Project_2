@@ -191,7 +191,7 @@ const testimonials = [
     content:
       "SS Admission Vala helped me get BAMS admission and internship support. Very trusted team.",
     rating: 5,
-    avatar: "https://i.pravatar.cc/150?u=priya",
+    avatar: "https://static.vecteezy.com/system/resources/previews/021/548/095/non_2x/default-profile-picture-avatar-user-avatar-icon-person-icon-head-icon-profile-picture-icons-default-anonymous-user-male-and-female-businessman-photo-placeholder-social-network-avatar-portrait-free-vector.jpg",
   },
   {
     name: "Pooja",
@@ -199,7 +199,7 @@ const testimonials = [
     content:
       "I got B.Ed admission and now teaching in school. Thank you SS Admission Vala.",
     rating: 5,
-    avatar: "https://i.pravatar.cc/150?u=rahul",
+    avatar: "https://static.vecteezy.com/system/resources/previews/021/548/095/non_2x/default-profile-picture-avatar-user-avatar-icon-person-icon-head-icon-profile-picture-icons-default-anonymous-user-male-and-female-businessman-photo-placeholder-social-network-avatar-portrait-free-vector.jpg",
   },
   {
     name: "Neha",
@@ -207,7 +207,7 @@ const testimonials = [
     content:
       "Best consultancy for nursing admission. They also guided for placement.",
     rating: 5,
-    avatar: "https://i.pravatar.cc/150?u=anjali",
+    avatar: "https://static.vecteezy.com/system/resources/previews/021/548/095/non_2x/default-profile-picture-avatar-user-avatar-icon-person-icon-head-icon-profile-picture-icons-default-anonymous-user-male-and-female-businessman-photo-placeholder-social-network-avatar-portrait-free-vector.jpg",
   },
 ];
 

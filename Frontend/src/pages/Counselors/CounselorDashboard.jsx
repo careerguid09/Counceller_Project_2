@@ -42,6 +42,7 @@ const CounselorDashboard = () => {
 
   // Domain Metadata for UI Icons and Descriptions (Old UI Data)
   const counselorDomains = [
+
     { id: 1, name: "MEDICAL", icon: Stethoscope, bgColor: "bg-red-50", color: "text-red-600", description: "Healthcare and surgical medical programs" },
     { id: 2, name: "PHARMACY", icon: Pill, bgColor: "bg-emerald-50", color: "text-emerald-600", description: "Pharmaceutical sciences and drug research" },
     { id: 3, name: "NURSING", icon: UserRound, bgColor: "bg-blue-50", color: "text-blue-600", description: "Clinical nursing and healthcare assistance" },
@@ -54,6 +55,103 @@ const CounselorDashboard = () => {
     { id: 10, name: "LANGUAGES", icon: Languages, bgColor: "bg-yellow-50", color: "text-yellow-600", description: "Global communication and linguistics" },
     { id: 11, name: "AGRICULTURE", icon: Leaf, bgColor: "bg-lime-50", color: "text-lime-600", description: "Farm science and agricultural technology" },
     { id: 12, name: "EDUCATION", icon: Presentation, bgColor: "bg-amber-50", color: "text-amber-600", description: "Teacher training and pedagogical studies" },
+
+    {
+      id: 1,
+      name: "MEDICAL",
+      icon: Stethoscope,
+      description: "Healthcare and surgical medical programs",
+      color: "text-red-600",
+      bgColor: "bg-red-50",
+    },
+    {
+      id: 2,
+      name: "PHARMACY",
+      icon: Pill,
+      description: "Pharmaceutical sciences and drug research",
+      color: "text-emerald-600",
+      bgColor: "bg-emerald-50",
+    },
+    {
+      id: 3,
+      name: "NURSING",
+      icon: UserRound,
+      description: "Clinical nursing and healthcare assistance",
+      color: "text-blue-600",
+      bgColor: "bg-blue-50",
+    },
+    {
+      id: 4,
+      name: "PARAMEDICAL",
+      icon: Microscope,
+      description: "Paramedical and allied health services",
+      color: "text-purple-600",
+      bgColor: "bg-purple-50",
+    },
+    {
+      id: 5,
+      name: "ENGINEERING",
+      icon: Settings,
+      description: "Technical and technological innovations",
+      color: "text-orange-600",
+      bgColor: "bg-orange-50",
+    },
+    {
+      id: 6,
+      name: "MANAGEMENT",
+      icon: Briefcase,
+      description: "Business leadership and administration",
+      color: "text-indigo-600",
+      bgColor: "bg-indigo-50",
+    },
+    {
+      id: 7,
+      name: "GRADUATION",
+      icon: BookOpen,
+      description: "Graduate arts and science degrees",
+      color: "text-teal-600",
+      bgColor: "bg-teal-50",
+    },
+    {
+      id: 8,
+      name: "POST GRADUATION",
+      icon: GraduationCap,
+      description: "Advanced master and research programs",
+      color: "text-cyan-600",
+      bgColor: "bg-cyan-50",
+    },
+    {
+      id: 9,
+      name: "VOCATIONAL",
+      icon: Laptop,
+      description: "Skill-based technical training",
+      color: "text-pink-600",
+      bgColor: "bg-pink-50",
+    },
+    {
+      id: 10,
+      name: "LANGUAGES",
+      icon: Languages,
+      description: "Global communication and linguistics",
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-50",
+    },
+    {
+      id: 11,
+      name: "AGRICULTURE",
+      icon: Leaf,
+      description: "Farm science and agricultural technology",
+      color: "text-lime-600",
+      bgColor: "bg-lime-50",
+    },
+    {
+      id: 12,
+      name: "EDUCATION",
+      icon: Presentation,
+      description: "Teacher training and pedagogical studies",
+      color: "text-amber-600",
+      bgColor: "bg-amber-50",
+    },
   ];
 
   useEffect(() => {

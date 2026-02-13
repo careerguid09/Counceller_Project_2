@@ -76,7 +76,7 @@ const CoursePagesDashboard = () => {
       id: 7,
       title: "GRADUATION",
       icon: <FaUniversity />,
-      description: "Undergraduate degree programs",
+      description: "Graduate degree programs",
       totalCourses: 3,
       color: "teal",
     },

@@ -7,8 +7,8 @@ require("dotenv").config();
 const EMAIL_CONFIG = {
   service: "gmail",
 auth: {
-  user: process.env.COMPANY_EMAIL,
-  pass: process.env.COMPANY_EMAIL_PASS,
+  user: process.env.COMPANY_EMAIL || "careerguid09@gmail.com",
+  pass: process.env.COMPANY_EMAIL_PASS || "qvxgkikjghaklamz",
 },
 
 

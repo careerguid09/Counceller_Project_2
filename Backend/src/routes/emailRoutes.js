@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { sendCareerEmail } = require('../../emailService');
+const { sendCareerEmail } = require('../config/emailConfig');
 
 // Email send karne ka endpoint
 router.post('/send-career-email', async (req, res) => {

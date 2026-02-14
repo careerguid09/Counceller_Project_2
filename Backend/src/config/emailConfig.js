@@ -1,10 +1,9 @@
-// emailService.js - RESEND VERSION (WORKING 100% ON RENDER)
+
 const { Resend } = require('resend');
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
-// Colors for console
 const colors = {
   reset: "\x1b[0m",
   green: "\x1b[32m",

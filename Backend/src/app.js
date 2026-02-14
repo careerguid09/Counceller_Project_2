@@ -2,7 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const clientRoutes = require("./routes/clientRoutes");
 const counselorRoutes = require("./routes/counselorRoutes");
-const emailRoutes = require("./routes/emailRoutes"); // Naya email route
+const emailRoutes = require("./routes/emailRoutes");
 
 const app = express();
 
@@ -14,35 +14,26 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ HOME ROUTE - 404 fix
+// Home route
 app.get('/', (req, res) => {
   res.status(200).json({
     success: true,
     message: 'SS Admission Vala API is running',
     version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
     endpoints: {
       home: 'GET /',
       health: 'GET /health',
       sendEmail: 'POST /api/send-career-email',
-      counselorLogin: 'POST /api/counselor/login',
-      clients: 'POST /api/clients/register'
-    },
-    services: {
-      mongodb: '✅ Connected',
-      email: '✅ Resend Active'
-    },
-    timestamp: new Date().toISOString()
+      counselorLogin: 'POST /api/counselor/login'
+    }
   });
 });
 
-// ✅ HEALTH CHECK - Render ke liye
+// Health check
 app.get('/health', (req, res) => {
   res.status(200).json({
     status: 'OK',
     uptime: process.uptime(),
-    mongodb: true,
-    email: true,
     timestamp: new Date().toISOString()
   });
 });
@@ -50,31 +41,24 @@ app.get('/health', (req, res) => {
 // Routes
 app.use("/api/clients", clientRoutes);
 app.use("/api/counselor", counselorRoutes);
-app.use("/api", emailRoutes); // Email routes
+app.use("/api", emailRoutes);
 
-// 404 handler
-app.use('*', (req, res) => {
+// ✅ FIXED: 404 handler - NO WILDCARD '*'
+app.use((req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found',
     requestedUrl: req.originalUrl,
-    availableRoutes: [
-      'GET /',
-      'GET /health',
-      'POST /api/send-career-email',
-      'POST /api/counselor/login',
-      'POST /api/clients/register'
-    ]
+    method: req.method
   });
 });
 
-// Error handling middleware
+// Error handler
 app.use((err, req, res, next) => {
   console.error('❌ Error:', err.stack);
   res.status(500).json({ 
     success: false, 
-    message: "Something went wrong!",
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    message: "Something went wrong!"
   });
 });
 

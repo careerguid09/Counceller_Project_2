@@ -347,7 +347,7 @@ const EMAIL_TEMPLATES = {
   }),
 };
 
-// ==================== OPTIMIZED EMAIL SERVICE CLASS ====================
+
 class EmailService {
   constructor() {
     this.transporter = nodemailer.createTransport(EMAIL_CONFIG);
@@ -363,7 +363,6 @@ class EmailService {
     }
   }
 
-  // ⚡ PRE-VERIFY CONNECTION FOR SPEED
   async preVerifyConnection() {
     try {
       await this.transporter.verify();
@@ -390,7 +389,7 @@ class EmailService {
     }
 
     logs.push(logEntry);
-    // ⚡ ASYNC WRITE - DON'T WAIT
+  
     fs.writeFile(logFile, JSON.stringify(logs, null, 2), (err) => {
       if (err) console.error("Log write error:", err);
     });
@@ -399,7 +398,7 @@ class EmailService {
     console.log(`📧 [${timestamp}] ${type}: ${data.userEmail || "N/A"}`);
   }
 
-  // ⚡ OPTIMIZED EMAIL SENDING FUNCTION
+
   async sendCareerConfirmation(
     userEmail,
     userName,
@@ -431,7 +430,7 @@ class EmailService {
         },
       };
 
-      // ⚡ CONDITIONAL VERIFICATION - ONLY IF NOT ALREADY VERIFIED
+    
       if (!this.isConnectionVerified) {
         await this.transporter.verify();
         this.isConnectionVerified = true;
@@ -479,7 +478,6 @@ class EmailService {
         error.message,
       );
 
-      // ⚡ ASYNC ERROR LOGGING
       setTimeout(() => {
         this.logEmailActivity("FAILED", {
           userEmail,
@@ -490,7 +488,6 @@ class EmailService {
         });
       }, 0);
 
-      // ⚡ ASYNC BACKUP - DON'T WAIT
       this.saveToBackup(userEmail, userName, mobileNumber, city, problem).catch(
         (backupErr) => console.error("Backup error:", backupErr.message),
       );
@@ -524,14 +521,14 @@ class EmailService {
       }
 
       existingData.push(backupData);
-      // ⚡ ASYNC WRITE
+
       fs.writeFile(backupFile, JSON.stringify(existingData, null, 2), (err) => {
         if (err) console.error("Backup write error:", err);
       });
 
       return true;
     } catch (backupError) {
-      console.error("❌ Backup failed:", backupError.message);
+      console.error(" Backup failed:", backupError.message);
       return false;
     }
   }
@@ -541,7 +538,7 @@ class EmailService {
 // Create singleton instance
 const emailService = new EmailService();
 
-// ⚡ ULTRA-FAST EMAIL FUNCTION
+
 const sendCareerEmail = async (
   userEmail,
   userName,
@@ -556,7 +553,6 @@ const sendCareerEmail = async (
   console.log(`   📧 ${userEmail}`);
   console.log(`   📍 ${city || "Not specified"}`);
 
-  // ⚡ IMMEDIATE RESPONSE - Don't wait for email
   const immediateResponse = {
     success: true,
     immediate: true,
@@ -564,7 +560,6 @@ const sendCareerEmail = async (
     timestamp: timestamp,
   };
 
-  // ⚡ SEND EMAIL IN BACKGROUND WITHOUT BLOCKING
   emailService
     .sendCareerConfirmation(userEmail, userName, mobileNumber, city, problem)
     .then((result) => {
@@ -586,11 +581,10 @@ const sendCareerEmail = async (
       );
     });
 
-  // ⚡ RETURN IMMEDIATELY - DON'T WAIT FOR EMAIL
+
   return immediateResponse;
 };
 
-// ==================== EXPORTS ====================
 module.exports = {
   sendCareerEmail,
   emailService,

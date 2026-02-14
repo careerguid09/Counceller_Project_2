@@ -2,9 +2,7 @@ const Client = require("../models/Client");
 const ExcelJS = require('exceljs');
 const { sendCareerEmail } = require("../config/emailConfig");
 
-/* ===============================
-   CREATE CLIENT (Public)
-================================ */
+
 exports.createClient = async (req, res) => {
   try {
     // Add new tracking fields
@@ -54,9 +52,7 @@ exports.createClient = async (req, res) => {
   }
 };
 
-/* ===============================
-   GET ALL CLIENTS (Protected)
-================================ */
+
 exports.getAllClients = async (req, res) => {
   try {
     const clients = await Client.find().sort({ createdAt: -1 });
@@ -66,9 +62,7 @@ exports.getAllClients = async (req, res) => {
   }
 };
 
-/* ===============================
-   DELETE CLIENT (Protected)
-================================ */
+
 exports.deleteClient = async (req, res) => {
   try {
     const client = await Client.findById(req.params.id);

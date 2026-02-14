@@ -1,31 +1,13 @@
-const nodemailer = require("nodemailer");
+// emailService.js - Resend API के साथ कॉन्फ़िगरेशन (Render पर 100% काम करेगा)
+const { Resend } = require('resend');
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
+// Resend इंस्टेंस बनाएं
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const EMAIL_CONFIG = {
-  service: "gmail",
-auth: {
-  user: process.env.COMPANY_EMAIL || "careerguid09@gmail.com",
-  pass: process.env.COMPANY_EMAIL_PASS || "qvxgkikjghaklamz",
-},
-
-
-  pool: true, 
-  maxConnections: 5, 
-  maxMessages: 100, 
-  rateDelta: 1000, 
-  rateLimit: 10, 
-  secure: true, 
-  tls: {
-    rejectUnauthorized: false, 
-  },
-  connectionTimeout: 10000, 
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-};
-
+// ==================== EMAIL TEMPLATES ====================
 const EMAIL_TEMPLATES = {
   careerConfirmation: (userName, mobileNumber, city, problem) => ({
     subject: "Career Assistance Request Confirmation -SS ADMISSION VALA",
@@ -332,7 +314,7 @@ const EMAIL_TEMPLATES = {
           <!-- Footer -->
           <div class="footer mobile-px-4" style="background: #f8f9fa; padding: 25px; text-align: center; color: #6c757d; font-size: 14px; border-top: 1px solid #e9ecef;">
             <p style="margin: 0 0 10px;">
-              <strong style="color: #374151;">SS ADMISSION VALACareer Services</strong><br>
+              <strong style="color: #374151;">SS ADMISSION VALA Career Services</strong><br>
               <span style="font-size: 13px;"> Arhedi Road,Shiv City, Ayodhya Nagar Bhopal </span>
             </p>
             <p style="margin: 0; font-size: 12px; opacity: 0.7;" class="mobile-text-xs">
@@ -347,205 +329,60 @@ const EMAIL_TEMPLATES = {
   }),
 };
 
-
-class EmailService {
-  constructor() {
-    this.transporter = nodemailer.createTransport(EMAIL_CONFIG);
-    this.isConnectionVerified = false;
-    this.setupErrorLogging();
-    this.preVerifyConnection(); // Pre-verify for speed
-  }
-
-  setupErrorLogging() {
-    this.logDir = path.join(__dirname, "../logs/email");
-    if (!fs.existsSync(this.logDir)) {
-      fs.mkdirSync(this.logDir, { recursive: true });
-    }
-  }
-
-  async preVerifyConnection() {
-    try {
-      await this.transporter.verify();
-      this.isConnectionVerified = true;
-      console.log("✅ SMTP Pre-verified - Ready for instant emails");
-    } catch (error) {
-      console.log("⚠️ Pre-verification failed, will verify per email");
-      this.isConnectionVerified = false;
-    }
-  }
-
-  logEmailActivity(type, data) {
-    const timestamp = new Date().toLocaleTimeString();
-    const logEntry = { timestamp, type, ...data };
-
-    const logFile = path.join(
-      this.logDir,
-      `${new Date().toISOString().split("T")[0]}.json`,
-    );
-    let logs = [];
-
-    if (fs.existsSync(logFile)) {
-      logs = JSON.parse(fs.readFileSync(logFile, "utf8"));
-    }
-
-    logs.push(logEntry);
-  
-    fs.writeFile(logFile, JSON.stringify(logs, null, 2), (err) => {
-      if (err) console.error("Log write error:", err);
-    });
-
-    // Fast console log
-    console.log(`📧 [${timestamp}] ${type}: ${data.userEmail || "N/A"}`);
-  }
-
-
-  async sendCareerConfirmation(
-    userEmail,
-    userName,
-    mobileNumber,
-    city,
-    problem,
-  ) {
-    const startTime = Date.now();
-
-    try {
-      const template = EMAIL_TEMPLATES.careerConfirmation(
-        userName || "Client",
-        mobileNumber || "Not provided",
-        city || "Not specified",
-        problem || "Career guidance query",
-      );
-      const mailOptions = {
-        from: `"SS ADMISSION VALA Career Support" <${EMAIL_CONFIG.auth.user}>`,
-        to: userEmail,
-        cc: process.env.ADMIN_EMAIL,
-        replyTo: "careerguid09@gmail.com",
-        subject: template.subject,
-        html: template.html,
-        text: `Hello ${userName || "Client"}, your career query has been received. Our team will contact you within 24 hours.`,
-        headers: {
-          "X-Priority": "1",
-          "X-MSMail-Priority": "High",
-          Importance: "high",
-        },
-      };
-
-    
-      if (!this.isConnectionVerified) {
-        await this.transporter.verify();
-        this.isConnectionVerified = true;
-      }
-
-      // ⚡ SEND EMAIL WITHOUT WAITING FOR FULL RESPONSE
-      const sendPromise = this.transporter.sendMail(mailOptions);
-
-      // Set timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Email sending timeout")), 10000);
-      });
-
-      const info = await Promise.race([sendPromise, timeoutPromise]);
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      // ⚡ ASYNC LOGGING - DON'T WAIT
-      setTimeout(() => {
-        this.logEmailActivity("SENT", {
-          userEmail,
-          userName,
-          messageId: info.messageId,
-          duration: `${duration}ms`,
-        });
-      }, 0);
-
-      console.log(
-        `⚡ [${new Date().toLocaleTimeString()}] Email SENT to ${userEmail} in ${duration}ms`,
-      );
-
-      return {
-        success: true,
-        messageId: info.messageId,
-        accepted: info.accepted,
-        rejected: info.rejected,
-        duration: `${duration}ms`,
-      };
-    } catch (error) {
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      console.error(
-        `❌ [${new Date().toLocaleTimeString()}] Email FAILED for ${userEmail} after ${duration}ms:`,
-        error.message,
-      );
-
-      setTimeout(() => {
-        this.logEmailActivity("FAILED", {
-          userEmail,
-          userName,
-          error: error.message,
-          code: error.code,
-          duration: `${duration}ms`,
-        });
-      }, 0);
-
-      this.saveToBackup(userEmail, userName, mobileNumber, city, problem).catch(
-        (backupErr) => console.error("Backup error:", backupErr.message),
-      );
-
-      return {
-        success: false,
-        error: error.message,
-        fallbackUsed: true,
-        duration: `${duration}ms`,
-      };
-    }
-  }
-
-  async saveToBackup(userEmail, userName, mobileNumber, city, problem) {
-    try {
-      const backupData = {
-        timestamp: new Date().toISOString(),
-        userEmail,
-        userName,
-        mobileNumber,
-        city,
-        problem,
-        status: "pending_email",
-      };
-
-      const backupFile = path.join(this.logDir, "backup_submissions.json");
-      let existingData = [];
-
-      if (fs.existsSync(backupFile)) {
-        existingData = JSON.parse(fs.readFileSync(backupFile, "utf8"));
-      }
-
-      existingData.push(backupData);
-
-      fs.writeFile(backupFile, JSON.stringify(existingData, null, 2), (err) => {
-        if (err) console.error("Backup write error:", err);
-      });
-
-      return true;
-    } catch (backupError) {
-      console.error(" Backup failed:", backupError.message);
-      return false;
-    }
-  }
+// ==================== LOGGING SETUP ====================
+const logDir = path.join(__dirname, "../logs/email");
+if (!fs.existsSync(logDir)) {
+  fs.mkdirSync(logDir, { recursive: true });
 }
 
-// ==================== OPTIMIZED MAIN EXPORT FUNCTION ====================
-// Create singleton instance
-const emailService = new EmailService();
+const logEmailActivity = (type, data) => {
+  const timestamp = new Date().toLocaleTimeString();
+  const logEntry = { timestamp, type, ...data };
 
+  const logFile = path.join(logDir, `${new Date().toISOString().split("T")[0]}.json`);
+  let logs = [];
 
-const sendCareerEmail = async (
-  userEmail,
-  userName,
-  mobileNumber,
-  city,
-  problem,
-) => {
+  if (fs.existsSync(logFile)) {
+    logs = JSON.parse(fs.readFileSync(logFile, "utf8"));
+  }
+
+  logs.push(logEntry);
+  fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+  console.log(`📧 [${timestamp}] ${type}: ${data.userEmail || "N/A"}`);
+};
+
+// ==================== BACKUP FUNCTION ====================
+const saveToBackup = async (userEmail, userName, mobileNumber, city, problem) => {
+  try {
+    const backupData = {
+      timestamp: new Date().toISOString(),
+      userEmail,
+      userName,
+      mobileNumber,
+      city,
+      problem,
+      status: "pending_email",
+    };
+
+    const backupFile = path.join(logDir, "backup_submissions.json");
+    let existingData = [];
+
+    if (fs.existsSync(backupFile)) {
+      existingData = JSON.parse(fs.readFileSync(backupFile, "utf8"));
+    }
+
+    existingData.push(backupData);
+    fs.writeFileSync(backupFile, JSON.stringify(existingData, null, 2));
+    return true;
+  } catch (backupError) {
+    console.error("Backup failed:", backupError.message);
+    return false;
+  }
+};
+
+// ==================== MAIN EMAIL FUNCTION ====================
+const sendCareerEmail = async (userEmail, userName, mobileNumber, city, problem) => {
+  const startTime = Date.now();
   const timestamp = new Date().toLocaleTimeString();
 
   console.log(`\n🚀 [${timestamp}] INSTANT EMAIL PROCESSING STARTED`);
@@ -553,40 +390,96 @@ const sendCareerEmail = async (
   console.log(`   📧 ${userEmail}`);
   console.log(`   📍 ${city || "Not specified"}`);
 
-  const immediateResponse = {
-    success: true,
-    immediate: true,
-    message: "Email queued for instant delivery",
-    timestamp: timestamp,
-  };
-
-  emailService
-    .sendCareerConfirmation(userEmail, userName, mobileNumber, city, problem)
-    .then((result) => {
-      const resultTime = new Date().toLocaleTimeString();
-      if (result.success) {
-        console.log(
-          `✅ [${resultTime}] Email DELIVERED to ${userEmail} (${result.duration})`,
-        );
-      } else {
-        console.log(
-          `⚠️ [${resultTime}] Email FAILED for ${userEmail}: ${result.error}`,
-        );
-      }
-    })
-    .catch((err) => {
-      console.error(
-        `❌ [${new Date().toLocaleTimeString()}] Background email error:`,
-        err.message,
-      );
+  try {
+    // टेम्प्लेट तैयार करें
+    const template = EMAIL_TEMPLATES.careerConfirmation(
+      userName || "Client",
+      mobileNumber || "Not provided",
+      city || "Not specified",
+      problem || "Career guidance query"
+    );
+    
+    // Resend से ईमेल भेजें
+    const { data, error } = await resend.emails.send({
+      from: 'SS Admission <onboarding@resend.dev>',  // फ्री टियर के लिए
+      to: [userEmail],
+      cc: process.env.ADMIN_EMAIL ? [process.env.ADMIN_EMAIL] : [],
+      subject: template.subject,
+      html: template.html,
     });
-
-
-  return immediateResponse;
+    
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    // अगर कोई error है तो दिखाएं
+    if (error) {
+      console.error(`❌ [${new Date().toLocaleTimeString()}] Email FAILED for ${userEmail} after ${duration}ms:`, error.message);
+      
+      // बैकअप में सेव करें
+      await saveToBackup(userEmail, userName, mobileNumber, city, problem);
+      
+      // लॉग करें
+      logEmailActivity("FAILED", {
+        userEmail,
+        userName,
+        error: error.message,
+        duration: `${duration}ms`,
+      });
+      
+      return { 
+        success: false, 
+        error: error.message,
+        fallbackUsed: true,
+        duration: `${duration}ms`,
+      };
+    }
+    
+    // सफलता मिली
+    console.log(`✅ [${new Date().toLocaleTimeString()}] Email SENT to ${userEmail} in ${duration}ms, ID: ${data?.id}`);
+    
+    // लॉग करें
+    logEmailActivity("SENT", {
+      userEmail,
+      userName,
+      messageId: data?.id,
+      duration: `${duration}ms`,
+    });
+    
+    return { 
+      success: true, 
+      immediate: true,
+      messageId: data?.id,
+      message: "Email sent successfully",
+      duration: `${duration}ms`,
+    };
+    
+  } catch (error) {
+    const endTime = Date.now();
+    const duration = endTime - startTime;
+    
+    console.error(`❌ [${new Date().toLocaleTimeString()}] Email FAILED for ${userEmail} after ${duration}ms:`, error.message);
+    
+    // बैकअप में सेव करें
+    await saveToBackup(userEmail, userName, mobileNumber, city, problem);
+    
+    // लॉग करें
+    logEmailActivity("FAILED", {
+      userEmail,
+      userName,
+      error: error.message,
+      duration: `${duration}ms`,
+    });
+    
+    return { 
+      success: false, 
+      error: error.message,
+      fallbackUsed: true,
+      duration: `${duration}ms`,
+    };
+  }
 };
 
+// ==================== EXPORT ====================
 module.exports = {
   sendCareerEmail,
-  emailService,
-  EmailService,
 };

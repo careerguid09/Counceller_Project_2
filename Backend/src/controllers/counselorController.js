@@ -1,4 +1,4 @@
-// src/controllers/counselorController.js
+
 const Counselor = require("../models/Counselor");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");

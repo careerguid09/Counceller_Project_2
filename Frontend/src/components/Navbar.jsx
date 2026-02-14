@@ -13,8 +13,6 @@ import {
   FaAngleRight,
 } from "react-icons/fa";
 import { toast } from "react-toastify";
-
-// Counselor Login Modal
 const CounselorLoginModal = ({ isOpen, onClose, onLogin }) => {
   const [formData, setFormData] = useState({
     email: "",

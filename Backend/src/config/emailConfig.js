@@ -1,9 +1,10 @@
-// emailService.js - FINAL VERSION WITH DOMAIN CHECK
+// emailService.js - RESEND VERSION (WORKING 100% ON RENDER)
 const { Resend } = require('resend');
 const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
+// Colors for console
 const colors = {
   reset: "\x1b[0m",
   green: "\x1b[32m",
@@ -11,13 +12,14 @@ const colors = {
   yellow: "\x1b[33m",
   blue: "\x1b[34m",
   cyan: "\x1b[36m",
+  magenta: "\x1b[35m"
 };
 
 class EmailService {
   constructor() {
-    console.log(`\n${colors.cyan}════════════════════════════════════════════${colors.reset}`);
-    console.log(`${colors.blue}📧 EMAIL SERVICE (RESEND)${colors.reset}`);
-    console.log(`${colors.cyan}════════════════════════════════════════════${colors.reset}`);
+    console.log(`\n${colors.magenta}════════════════════════════════════════════${colors.reset}`);
+    console.log(`${colors.cyan}📧 EMAIL SERVICE (RESEND)${colors.reset}`);
+    console.log(`${colors.magenta}════════════════════════════════════════════${colors.reset}`);
     
     this.checkEnvVars();
     this.initResend();
@@ -30,27 +32,28 @@ class EmailService {
     // API Key check
     if (!process.env.RESEND_API_KEY) {
       console.log(`${colors.red}❌ RESEND_API_KEY missing${colors.reset}`);
-      return;
+    } else {
+      console.log(`${colors.green}✅ RESEND_API_KEY: ${process.env.RESEND_API_KEY.length} chars${colors.reset}`);
     }
-    console.log(`${colors.green}✅ RESEND_API_KEY: ${process.env.RESEND_API_KEY.length} chars${colors.reset}`);
 
     // Company Email check
     if (!process.env.COMPANY_EMAIL) {
       console.log(`${colors.red}❌ COMPANY_EMAIL missing${colors.reset}`);
-      return;
+    } else {
+      console.log(`${colors.green}✅ COMPANY_EMAIL: ${process.env.COMPANY_EMAIL}${colors.reset}`);
     }
-    console.log(`${colors.green}✅ COMPANY_EMAIL: ${process.env.COMPANY_EMAIL}${colors.reset}`);
 
-    // Domain check - Extract domain from email
-    const emailDomain = process.env.COMPANY_EMAIL.split('@')[1];
-    console.log(`${colors.blue}📌 Domain to verify: ${emailDomain}${colors.reset}`);
+    // Admin Email check
+    if (process.env.ADMIN_EMAIL) {
+      console.log(`${colors.green}✅ ADMIN_EMAIL: ${process.env.ADMIN_EMAIL}${colors.reset}`);
+    }
   }
 
   initResend() {
     if (process.env.RESEND_API_KEY) {
       try {
         this.resend = new Resend(process.env.RESEND_API_KEY);
-        console.log(`${colors.green}✅ Resend initialized${colors.reset}`);
+        console.log(`${colors.green}✅ Resend initialized successfully${colors.reset}`);
       } catch (error) {
         console.log(`${colors.red}❌ Resend init failed: ${error.message}${colors.reset}`);
       }
@@ -58,42 +61,56 @@ class EmailService {
   }
 
   setupLogging() {
-    this.logDir = path.join(__dirname, "../logs");
+    this.logDir = path.join(__dirname, "logs");
     if (!fs.existsSync(this.logDir)) {
       fs.mkdirSync(this.logDir, { recursive: true });
     }
-    console.log(`${colors.green}✅ Logs: ${this.logDir}${colors.reset}`);
-    console.log(`${colors.cyan}════════════════════════════════════════════${colors.reset}\n`);
+    console.log(`${colors.green}✅ Log directory: ${this.logDir}${colors.reset}`);
+    console.log(`${colors.magenta}════════════════════════════════════════════${colors.reset}\n`);
   }
 
   async sendCareerConfirmation(userEmail, userName, mobileNumber, city, problem) {
-    console.log(`\n${colors.blue}📧 Sending to: ${userEmail}${colors.reset}`);
+    console.log(`\n${colors.blue}📧 Sending email to: ${userEmail}${colors.reset}`);
     
     try {
       // Validation
       if (!process.env.RESEND_API_KEY) {
-        throw new Error('RESEND_API_KEY missing');
+        throw new Error('RESEND_API_KEY not configured');
+      }
+      if (!process.env.COMPANY_EMAIL) {
+        throw new Error('COMPANY_EMAIL not configured');
       }
 
-      // HTML template
+      // HTML Template
       const htmlContent = this.getHtmlTemplate(userName, mobileNumber, city, problem);
 
-      // Try sending email
+      // Send email via Resend
       console.log(`${colors.yellow}⏳ Sending via Resend...${colors.reset}`);
       
       const { data, error } = await this.resend.emails.send({
         from: `SS ADMISSION VALA <${process.env.COMPANY_EMAIL}>`,
         to: [userEmail],
-        subject: "Career Assistance Request Confirmation",
+        subject: "Career Assistance Request Confirmation - SS ADMISSION VALA",
         html: htmlContent,
+        replyTo: process.env.COMPANY_EMAIL,
+        ...(process.env.ADMIN_EMAIL && { cc: [process.env.ADMIN_EMAIL] })
       });
 
       if (error) {
         throw error;
       }
 
-      console.log(`${colors.green}✅ Email sent! ID: ${data?.id}${colors.reset}`);
-      
+      console.log(`${colors.green}✅ Email sent successfully!${colors.reset}`);
+      console.log(`${colors.dim}   ID: ${data?.id}${colors.reset}`);
+
+      // Log success
+      this.logToFile('success', {
+        userEmail,
+        userName,
+        messageId: data?.id,
+        timestamp: new Date().toISOString()
+      });
+
       return {
         success: true,
         messageId: data?.id,
@@ -101,14 +118,22 @@ class EmailService {
       };
 
     } catch (error) {
-      console.log(`${colors.red}❌ Failed: ${error.message}${colors.reset}`);
+      console.log(`${colors.red}❌ Email failed: ${error.message}${colors.reset}`);
       
       if (error.statusCode === 403) {
         console.log(`${colors.yellow}⚠ Domain not verified!${colors.reset}`);
-        console.log(`${colors.blue}🔧 Quick fix: Test with your own email first${colors.reset}`);
+        console.log(`${colors.blue}🔧 Fix: Add and verify domain in Resend dashboard${colors.reset}`);
       }
 
-      // Backup save
+      // Log failure
+      this.logToFile('failed', {
+        userEmail,
+        userName,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+
+      // Save to backup
       await this.saveToBackup(userEmail, userName, mobileNumber, city, problem);
 
       return {
@@ -123,45 +148,192 @@ class EmailService {
     return `<!DOCTYPE html>
     <html>
     <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 30px; text-align: center; }
-        .content { padding: 30px; background: #f9f9f9; }
-        .details { background: white; border-left: 4px solid #667eea; padding: 20px; margin: 20px 0; }
-        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        body { 
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+          line-height: 1.6; 
+          color: #333; 
+          margin: 0; 
+          padding: 0; 
+          background-color: #f9fafb; 
+        }
+        .container { 
+          max-width: 600px; 
+          margin: 0 auto; 
+          background: #ffffff; 
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header { 
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+          color: white; 
+          padding: 30px 20px; 
+          text-align: center; 
+        }
+        .header h1 {
+          margin: 0;
+          font-size: 28px;
+        }
+        .header p {
+          margin: 5px 0 0;
+          opacity: 0.9;
+        }
+        .content { 
+          padding: 40px 30px; 
+        }
+        .details { 
+          background: #f8f9fa; 
+          border-left: 4px solid #667eea; 
+          padding: 24px; 
+          margin: 32px 0; 
+          border-radius: 0 8px 8px 0; 
+        }
+        .details h3 {
+          color: #2d3748;
+          margin-top: 0;
+          margin-bottom: 20px;
+        }
+        .contact-box {
+          background: #fff3cd;
+          border: 1px solid #ffeaa7;
+          padding: 20px;
+          border-radius: 8px;
+          margin: 32px 0;
+        }
+        .footer { 
+          background: #f8f9fa; 
+          padding: 25px; 
+          text-align: center; 
+          color: #6c757d; 
+          font-size: 14px; 
+          border-top: 1px solid #e9ecef; 
+        }
+        @media only screen and (max-width: 640px) {
+          .content { padding: 20px; }
+          .details { padding: 16px; }
+        }
       </style>
     </head>
     <body>
       <div class="container">
+        <!-- Header -->
         <div class="header">
           <h1>SS ADMISSION VALA</h1>
           <p>Career Guidance & Professional Development</p>
         </div>
+        
+        <!-- Content -->
         <div class="content">
-          <h2>Dear ${userName || 'Client'},</h2>
-          <h3>🎉 Your career query has been received!</h3>
-          <p>Thank you for reaching out. Our team will contact you within 24 hours.</p>
-          
+          <h2 style="color: #2d3748; margin-top: 0;">Dear ${userName || 'Client'},</h2>
+         
+          <h4 style="color: #2d3748; margin: 20px 0; font-size: 20px;">
+            🎉 Your career query has been received successfully!
+          </h4>
+         
+          <p style="margin-bottom: 24px; color: #4b5563;">
+            Thank you for reaching out to <strong>SS ADMISSION VALA</strong> regarding your career aspirations. 
+            We have successfully received your query and our team is actively reviewing your case.
+          </p>
+
+          <!-- User Details Card -->
           <div class="details">
-            <h3>Your Details:</h3>
-            <p><strong>Name:</strong> ${userName || 'Not provided'}</p>
-            <p><strong>Mobile:</strong> ${mobileNumber || 'Not provided'}</p>
-            <p><strong>City:</strong> ${city || 'Not specified'}</p>
-            <p><strong>Query:</strong> ${problem || 'Career guidance'}</p>
+            <h3>Your Details</h3>
+            
+            <div style="margin-bottom: 12px;">
+              <strong>Full Name:</strong> ${userName || 'Not provided'}
+            </div>
+            <div style="margin-bottom: 12px;">
+              <strong>Mobile Number:</strong> ${mobileNumber || 'Not provided'}
+            </div>
+            <div style="margin-bottom: 12px;">
+              <strong>City:</strong> ${city || 'Not specified'}
+            </div>
+            <div>
+              <strong>Career Query:</strong> ${problem || 'Career guidance query'}
+            </div>
+          </div>
+
+          <!-- Process Timeline -->
+          <div style="margin: 40px 0;">
+            <h3 style="color: #111827; text-align: center;">⏳ Your Consultation Journey</h3>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 30px;">
+              <div style="text-align: center; flex: 1;">
+                <div style="width: 40px; height: 40px; background: #7C3AED; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">1</div>
+                <p style="font-weight: 600;">Initial Assessment</p>
+                <p style="font-size: 12px; color: #666;">4-6 Hours</p>
+              </div>
+              <div style="text-align: center; flex: 1;">
+                <div style="width: 40px; height: 40px; background: #10B981; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">2</div>
+                <p style="font-weight: 600;">Strategy</p>
+                <p style="font-size: 12px; color: #666;">24 Hours</p>
+              </div>
+              <div style="text-align: center; flex: 1;">
+                <div style="width: 40px; height: 40px; background: #F59E0B; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto;">3</div>
+                <p style="font-weight: 600;">Support</p>
+                <p style="font-size: 12px; color: #666;">Ongoing</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Contact Box -->
+          <div class="contact-box">
+            <h4 style="color: #856404; margin-top: 0;">📞 Need Immediate Assistance?</h4>
+            <div style="margin-bottom: 8px;">
+              <strong>Phone:</strong> +91 74156 66361
+            </div>
+            <div style="margin-bottom: 8px;">
+              <strong>Email:</strong> careerguid09@gmail.com
+            </div>
+            <div>
+              <strong>Hours:</strong> Mon-Sat, 9 AM - 8 PM IST
+            </div>
           </div>
           
-          <div style="background: #fff3cd; padding: 15px; border-radius: 5px;">
-            <p><strong>📞 Need help?</strong> +91 74156 66361</p>
+          <p style="margin-top: 30px; color: #4b5563; text-align: center;">
+            We're committed to helping you achieve your career goals!
+          </p>
+          
+          <div style="margin: 30px 0; text-align: center;">
+            <p><strong>Career Solutions Team</strong></p>
+            <p style="color: #6b7280; font-style: italic;">SS ADMISSION VALA - Shaping Future Professionals</p>
           </div>
         </div>
+        
+        <!-- Footer -->
         <div class="footer">
-          <p>SS ADMISSION VALA - Shaping Future Professionals</p>
-          <p>© ${new Date().getFullYear()} All rights reserved.</p>
+          <p>
+            <strong>SS ADMISSION VALA Career Services</strong><br>
+            Arhedi Road, Shiv City, Ayodhya Nagar, Bhopal
+          </p>
+          <p style="font-size: 12px; opacity: 0.7;">
+            This is an automated message. Please do not reply directly.<br>
+            © ${new Date().getFullYear()} SS ADMISSION VALA. All rights reserved.
+          </p>
         </div>
       </div>
     </body>
     </html>`;
+  }
+
+  logToFile(type, data) {
+    try {
+      const date = new Date().toISOString().split('T')[0];
+      const logFile = path.join(this.logDir, `email-${date}.json`);
+      
+      let logs = [];
+      if (fs.existsSync(logFile)) {
+        logs = JSON.parse(fs.readFileSync(logFile, 'utf8'));
+      }
+      
+      logs.push(data);
+      fs.writeFileSync(logFile, JSON.stringify(logs, null, 2));
+    } catch (err) {
+      // Silent fail
+    }
   }
 
   async saveToBackup(userEmail, userName, mobileNumber, city, problem) {
@@ -179,19 +351,22 @@ class EmailService {
         userName,
         mobileNumber,
         city,
-        problem
+        problem,
+        status: 'pending'
       });
       
       fs.writeFileSync(backupFile, JSON.stringify(backups, null, 2));
       console.log(`${colors.green}✅ Backup saved${colors.reset}`);
     } catch (err) {
-      console.log(`${colors.red}❌ Backup failed${colors.reset}`);
+      console.log(`${colors.red}❌ Backup failed: ${err.message}${colors.reset}`);
     }
   }
 }
 
+// Create singleton instance
 const emailService = new EmailService();
 
+// Export function
 const sendCareerEmail = async (userEmail, userName, mobileNumber, city, problem) => {
   return await emailService.sendCareerConfirmation(
     userEmail, userName, mobileNumber, city, problem

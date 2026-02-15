@@ -1,11 +1,12 @@
 const Client = require("../models/Client");
 const ExcelJS = require('exceljs');
-const { sendCareerEmail } = require("../config/emailConfig");
+
+const { sendCareerEmail } = require('../config/emailConfig');
 
 
 exports.createClient = async (req, res) => {
   try {
-    // Add new tracking fields
+   
     const clientData = {
       ...req.body,
       isNew: true,
